@@ -62,6 +62,10 @@ namespace ItorahDebug {
             }
 
             if (Input.GetKeyDown(KeyCode.Alpha8)) {
+                if (itorah == null) {
+                    itorah = GameObject.Find("itorah");
+                }
+
                 this.customDebugMenuOpen = !this.customDebugMenuOpen;
                 Cursor.visible = this.customDebugMenuOpen;
             }
