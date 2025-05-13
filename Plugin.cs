@@ -40,8 +40,14 @@ namespace ItorahDebug {
             dMenuOpenVar = typeof(DebugMenu).GetField("debugMenuOpen", BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
             dNormalTimeScaleVar = typeof(DebugMenu).GetField("normalTimescale", BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
 
-            itorah = GameObject.Find("itorah");
-            playerSkillSet = itorah.GetComponent<SkillSet>();
+            GetItorahReference();
+        }
+
+        private void GetItorahReference() {
+            if (itorah == null) {
+                itorah = GameObject.Find("itorah");
+                playerSkillSet = itorah.GetComponent<SkillSet>();
+            }
         }
 
         private void Update() {
@@ -62,10 +68,8 @@ namespace ItorahDebug {
             }
 
             if (Input.GetKeyDown(KeyCode.Alpha8)) {
-                if (itorah == null) {
-                    itorah = GameObject.Find("itorah");
-                }
 
+                GetItorahReference();
                 this.customDebugMenuOpen = !this.customDebugMenuOpen;
                 Cursor.visible = this.customDebugMenuOpen;
             }
@@ -84,7 +88,7 @@ namespace ItorahDebug {
         private void DrawDebugInfo() {
             if (showDebugInfo) {
                 int xPosition = Screen.width - 210;
-                int currentY = Screen.height - 210;
+                int currentY = Screen.height - 90;
                 int yIncrement = 22;
                 GUI.Label(new Rect(10, currentY, 200, 20), "Debug Info");
                 currentY += yIncrement;
