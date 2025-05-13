@@ -15,6 +15,8 @@ namespace ItorahDebug {
 
         bool customDebugMenuOpen = false;
         bool showDebugInfo = true;
+        bool showHitbox = false;
+        bool showHitboxTerrain = false;
 
         DebugMenu dMenu;
         FieldInfo dMenuOpenVar;
@@ -26,6 +28,7 @@ namespace ItorahDebug {
         Vector3 storedPos;
 
         GameObject hitBoxRenderer = null;
+        GameObject hitBoxTerrainRenderer = null;
 
         private void Awake() {
             // Plugin startup logic
@@ -75,6 +78,15 @@ namespace ItorahDebug {
             }
         }
 
+        private void OnDestroy() {
+            if (hitBoxRenderer != null) {
+                DestroyImmediate(hitBoxRenderer);
+                hitBoxRenderer = null;
+                DestroyImmediate(hitBoxTerrainRenderer);
+                hitBoxTerrainRenderer = null;
+            }
+        }
+
         private void OnGUI() {
             if (customDebugMenuOpen) {
                 DrawCustomDebugMenu();
@@ -118,13 +130,31 @@ namespace ItorahDebug {
                 itorah.GetComponent<LifePoints>().CurrentPoints = itorah.GetComponent<LifePoints>().Maximum;
             }
             currentY += yIncrement;
-            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Toggle Hitbox Renderer")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, 200, 20), showHitbox, "Hitboxes")) {
+                showHitbox = true;
                 if (hitBoxRenderer == null) {
-                    hitBoxRenderer = new GameObject();
+                    hitBoxRenderer = new GameObject("HitboxRenderer");
                     hitBoxRenderer.AddComponent<HitboxRender>();
-                } else {
+                }
+            } else {
+                showHitbox = false;
+                if (hitBoxRenderer != null) {
                     DestroyImmediate(hitBoxRenderer);
                     hitBoxRenderer = null;
+                }
+            }
+            currentY += yIncrement;
+            if (GUI.Toggle(new Rect(xPosition, currentY, 200, 20), showHitboxTerrain, "Terrain Hitboxes")) {
+                showHitboxTerrain = true;
+                if (hitBoxTerrainRenderer == null) {
+                    hitBoxTerrainRenderer = new GameObject("HitboxRendererTerrain");
+                    hitBoxTerrainRenderer.AddComponent<HitboxTerrainRender>();
+                }
+            } else {
+                showHitboxTerrain = false;
+                if (hitBoxTerrainRenderer != null) {
+                    DestroyImmediate(hitBoxTerrainRenderer);
+                    hitBoxTerrainRenderer = null;
                 }
             }
             currentY += yIncrement;
