@@ -14,7 +14,7 @@ namespace ItorahDebug {
         internal static new ManualLogSource Logger;
 
         bool customDebugMenuOpen = false;
-        bool showDebugInfo = false;
+        bool showDebugInfo = true;
 
         DebugMenu dMenu;
         FieldInfo dMenuOpenVar;
