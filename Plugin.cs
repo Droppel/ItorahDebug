@@ -20,6 +20,7 @@ namespace ItorahDebug {
         FieldInfo dNormalTimeScaleVar;
 
         GameObject itorah;
+        SkillSet playerSkillSet;
 
         Vector3 storedPos;
 
@@ -39,6 +40,7 @@ namespace ItorahDebug {
             dNormalTimeScaleVar = typeof(DebugMenu).GetField("normalTimescale", BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
 
             itorah = GameObject.Find("itorah");
+            playerSkillSet = itorah.GetComponent<SkillSet>();
         }
 
         private void Update() {
@@ -96,6 +98,49 @@ namespace ItorahDebug {
                 }
             }
             currentY += yIncrement;
+            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[0].learned, "WallJump")) {
+                playerSkillSet.skills[0].learned = true;
+            } else {
+                playerSkillSet.skills[0].learned = false;
+            }
+            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[1].learned, "Stomp")) {
+                playerSkillSet.skills[1].learned = true;
+            } else {
+                playerSkillSet.skills[1].learned = false;
+            }
+            currentY += yIncrement;
+            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[2].learned, "DoubleJump")) {
+                playerSkillSet.skills[2].learned = true;
+            } else {
+                playerSkillSet.skills[2].learned = false;
+            }
+            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[3].learned, "UpperCut")) {
+                playerSkillSet.skills[3].learned = true;
+            } else {
+                playerSkillSet.skills[3].learned = false;
+            }
+            currentY += yIncrement;
+            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[4].learned, "Dash")) {
+                playerSkillSet.skills[4].learned = true;
+            } else {
+                playerSkillSet.skills[4].learned = false;
+            }
+            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[5].learned, "Heal")) {
+                playerSkillSet.skills[5].learned = true;
+            } else {
+                playerSkillSet.skills[5].learned = false;
+            }
+            currentY += yIncrement;
+            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[6].learned, "Throw")) {
+                playerSkillSet.skills[6].learned = true;
+            } else {
+                playerSkillSet.skills[6].learned = false;
+            }
+            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[7].learned, "ChargeAttack")) {
+                playerSkillSet.skills[7].learned = true;
+            } else {
+                playerSkillSet.skills[7].learned = false;
+            }
         }
     }
 }
