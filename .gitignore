@@ -1,0 +1,6 @@
+ItorahDebug.csproj
+Hitboxes/HitboxRenderer.cs
+bin/
+.vs/
+obj/
+*.sln
