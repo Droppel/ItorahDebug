@@ -13,6 +13,8 @@ namespace ItorahDebug {
     public class Plugin : BaseUnityPlugin {
         internal static new ManualLogSource Logger;
 
+        bool customDebugMenuOpen = false;
+
         DebugMenu dMenu;
         FieldInfo dMenuOpenVar;
         FieldInfo dNormalTimeScaleVar;
@@ -56,7 +58,35 @@ namespace ItorahDebug {
                 itorah.transform.position = storedPos;
             }
 
-            if (Input.GetKeyDown(KeyCode.F5)) {
+            if (Input.GetKeyDown(KeyCode.Alpha8)) {
+                this.customDebugMenuOpen = !this.customDebugMenuOpen;
+                Cursor.visible = this.customDebugMenuOpen;
+            }
+        }
+
+        private void OnGUI() {
+            if (!customDebugMenuOpen) {
+                return;
+            }
+            int xPosition = Screen.width - 210;
+            int currentY = 10;
+            int yIncrement = 22;
+            GUI.depth = int.MaxValue;
+            GUI.Label(new Rect(xPosition, currentY, 200, 20), "Custom Debug Menu");
+            currentY += yIncrement;
+            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Store position (F1)")) {
+                storedPos = itorah.transform.position;
+            }
+            currentY += yIncrement;
+            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Teleport to stored position (F2)")) {
+                itorah.transform.position = storedPos;
+            }
+            currentY += yIncrement;
+            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Restore health")) {
+                itorah.GetComponent<LifePoints>().CurrentPoints = itorah.GetComponent<LifePoints>().Maximum;
+            }
+            currentY += yIncrement;
+            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Toggle Hitbox Renderer")) {
                 if (hitBoxRenderer == null) {
                     hitBoxRenderer = new GameObject();
                     hitBoxRenderer.AddComponent<HitboxRender>();
@@ -65,9 +95,7 @@ namespace ItorahDebug {
                     hitBoxRenderer = null;
                 }
             }
-            if (Input.GetKeyDown(KeyCode.F3)) {
-                itorah.GetComponent<LifePoints>().CurrentPoints = itorah.GetComponent<LifePoints>().Maximum;
-            }
+            currentY += yIncrement;
         }
     }
 }
