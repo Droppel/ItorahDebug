@@ -14,6 +14,7 @@ namespace ItorahDebug {
         internal static new ManualLogSource Logger;
 
         bool customDebugMenuOpen = false;
+        bool showDebugInfo = false;
 
         DebugMenu dMenu;
         FieldInfo dMenuOpenVar;
@@ -67,9 +68,30 @@ namespace ItorahDebug {
         }
 
         private void OnGUI() {
-            if (!customDebugMenuOpen) {
-                return;
+            if (customDebugMenuOpen) {
+                DrawCustomDebugMenu();
             }
+
+            if (showDebugInfo) {
+                DrawDebugInfo();
+            }
+        }
+
+        private void DrawDebugInfo() {
+            if (showDebugInfo) {
+                int xPosition = Screen.width - 210;
+                int currentY = Screen.height - 210;
+                int yIncrement = 22;
+                GUI.Label(new Rect(10, currentY, 200, 20), "Debug Info");
+                currentY += yIncrement;
+                GUI.Label(new Rect(10, currentY, 200, 20), $"Position: {itorah.transform.position}");
+                currentY += yIncrement;
+                GUI.Label(new Rect(10, currentY, 200, 20), $"Velocity: {itorah.GetComponent<Rigidbody2D>().velocity}");
+                currentY += yIncrement;
+            }
+        }
+
+        private void DrawCustomDebugMenu() {
             int xPosition = Screen.width - 210;
             int currentY = 10;
             int yIncrement = 22;
@@ -98,6 +120,16 @@ namespace ItorahDebug {
                 }
             }
             currentY += yIncrement;
+
+            // Toggle DebugInfo
+            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), showDebugInfo, "Debug Info")) {
+                showDebugInfo = true;
+            } else {
+                showDebugInfo = false;
+            }
+            currentY += yIncrement;
+            
+            // Skill Toggles
             if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[0].learned, "WallJump")) {
                 playerSkillSet.skills[0].learned = true;
             } else {
