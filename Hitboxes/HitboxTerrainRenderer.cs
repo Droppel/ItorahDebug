@@ -33,6 +33,18 @@ namespace ItorahDebug.Hitbox {
                 return;
             }
 
+            if (!collider2D.isActiveAndEnabled) {
+                return;
+            }
+
+            TilemapRenderer tilemapRenderer = collider2D.gameObject.GetComponent<TilemapRenderer>();
+            if (tilemapRenderer == null) {
+                return;
+            }
+            if (!tilemapRenderer.isVisible) {
+                return;
+            }
+
             if (collider2D is CompositeCollider2D) {
                 if (colliders.Contains(collider2D)) {
                     return;
@@ -45,6 +57,8 @@ namespace ItorahDebug.Hitbox {
             if (Event.current?.type != EventType.Repaint || Camera.main == null) {
                 return;
             }
+
+            GUI.Label(new Rect(0, 0, 200, 20), $"{colliders.Count} colliders");
 
             GUI.depth = int.MaxValue;
             Camera camera = Camera.main;
