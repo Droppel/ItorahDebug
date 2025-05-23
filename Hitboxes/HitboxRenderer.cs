@@ -62,6 +62,10 @@ namespace ItorahDebug.Hitbox {
             int origDepth = GUI.depth;
             switch (collider2D) {
                 case BoxCollider2D boxCollider2D:
+                    Color color = Color.red;
+                    if (boxCollider2D.gameObject.name.Contains("RespawnPoint")) {
+                        color = Color.magenta;
+                    }
                     Vector2 halfSize = boxCollider2D.size / 2f;
                     Vector2 topLeft = new Vector2(-halfSize.x, halfSize.y);
                     Vector2 topRight = halfSize;
@@ -71,7 +75,7 @@ namespace ItorahDebug.Hitbox {
                     {
                         topLeft, topRight, bottomRight, bottomLeft, topLeft
                     };
-                    DrawPointSequence(boxPoints, camera, collider2D, lineWidth, Color.red);
+                    DrawPointSequence(boxPoints, camera, collider2D, lineWidth, color);
                     break;
                 case EdgeCollider2D edgeCollider2D:
                     DrawPointSequence(new List<Vector2>(edgeCollider2D.points), camera, collider2D, lineWidth, Color.yellow);
