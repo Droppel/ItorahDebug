@@ -46,9 +46,13 @@ namespace ItorahDebug {
 
             GetItorahReference();
 
-            dropdownOptions = new List<string>();
+            dropdownOptionsStorProg = new List<string>();
             foreach (var story in dMenu.StoryProgressDropdown.options) {
-                dropdownOptions.Add(story.text);
+                dropdownOptionsStorProg.Add(story.text);
+            }
+            dropdownOptionsCheckpoint = new List<string>();
+            foreach (var checkpoint in dMenu.BonfireDropdown.options) {
+                dropdownOptionsCheckpoint.Add(checkpoint.text);
             }
         }
 
@@ -117,14 +121,19 @@ namespace ItorahDebug {
             }
         }
 
-        private bool showDropdown = false;
-        private int selectedDropdownIndex = 0;
-        private List<string> dropdownOptions;
+        private bool showDropdownStorProg = false;
+        private int selectedDropdownIndexStorProg = 0;
+        private List<string> dropdownOptionsStorProg;
+        private Vector2 dropdownScrollPositionStorProg = Vector2.zero; // Scroll position for the dropdown
 
-        private Vector2 dropdownScrollPosition = Vector2.zero; // Scroll position for the dropdown
+        private bool showDropdownCheckpoint = false;
+        private int selectedDropdownIndexCheckpoint = 0;
+        private List<string> dropdownOptionsCheckpoint;
+        private Vector2 dropdownScrollPositionCheckpoint = Vector2.zero; // Scroll position for the dropdown
+
         private int maxDropdownHeight = 200; // Maximum height of the dropdown
-
         private int maxWidth = 400; // Maximum width
+
         private void DrawCustomDebugMenu() {
             int xPosition = Screen.width - maxWidth - 10;
             int currentY = 10;
@@ -231,22 +240,22 @@ namespace ItorahDebug {
             GUI.Label(new Rect(xPosition, currentY, maxWidth, 20), "Story Progression:");
             currentY += yIncrement;
 
-            selectedDropdownIndex = dMenu.StoryProgressDropdown.value;
-            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), dropdownOptions[selectedDropdownIndex])) {
-                showDropdown = !showDropdown;
+            selectedDropdownIndexStorProg = dMenu.StoryProgressDropdown.value;
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), dropdownOptionsStorProg[selectedDropdownIndexStorProg])) {
+                showDropdownStorProg = !showDropdownStorProg;
             }
-            if (showDropdown) {
+            if (showDropdownStorProg) {
                 
-                int totalDropdownHeight = dropdownOptions.Count * 20;
+                int totalDropdownHeight = dropdownOptionsStorProg.Count * 20;
                 Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
                 Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
 
-                dropdownScrollPosition = GUI.BeginScrollView(scrollViewRect, dropdownScrollPosition, contentRect);
+                dropdownScrollPositionStorProg = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionStorProg, contentRect);
 
-                for (int i = 0; i < dropdownOptions.Count; i++) {
-                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptions[i])) {
-                        selectedDropdownIndex = i;
-                        showDropdown = false;
+                for (int i = 0; i < dropdownOptionsStorProg.Count; i++) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsStorProg[i])) {
+                        selectedDropdownIndexStorProg = i;
+                        showDropdownStorProg = false;
                         dMenu.StoryProgressDropdown.value = i;
                         dMenu.SetSelectedStoryProgress();   
                     }
@@ -254,7 +263,34 @@ namespace ItorahDebug {
 
                 GUI.EndScrollView();
             }
-            currentY += yIncrement + (showDropdown ? Mathf.Min(maxDropdownHeight, dropdownOptions.Count * 20) : 0);
+            currentY += yIncrement + (showDropdownStorProg ? Mathf.Min(maxDropdownHeight, dropdownOptionsStorProg.Count * 20) : 0);
+            // Checkpoint
+            GUI.Label(new Rect(xPosition, currentY, maxWidth, 20), "Checkpoint:");
+            currentY += yIncrement;
+            selectedDropdownIndexCheckpoint = dMenu.BonfireDropdown.value;
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), dropdownOptionsCheckpoint[selectedDropdownIndexCheckpoint])) {
+                showDropdownCheckpoint = !showDropdownCheckpoint;
+            }
+            if (showDropdownCheckpoint) {
+                int totalDropdownHeight = dropdownOptionsCheckpoint.Count * 20;
+                Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
+                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
+
+                dropdownScrollPositionCheckpoint = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionCheckpoint, contentRect);
+
+                for (int i = 0; i < dropdownOptionsCheckpoint.Count; i++) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsCheckpoint[i])) {
+                        selectedDropdownIndexCheckpoint = i;
+                        showDropdownCheckpoint = false;
+                        dMenu.BonfireDropdown.value = i;
+                        dMenu.LoadSelectedCheckpoint();   
+                    }
+                }
+
+                GUI.EndScrollView();
+            }
+
+        
         }
     }
 }
