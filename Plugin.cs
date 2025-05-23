@@ -6,6 +6,7 @@ using System.Reflection;
 using GrimbartTales.Platformer2D.CharacterController;
 using ItorahDebug.Hitbox;
 using GrimbartTales.Platformer2D.DamageSystem;
+using System.Collections.Generic;
 
 namespace ItorahDebug {
 
@@ -44,6 +45,11 @@ namespace ItorahDebug {
             dNormalTimeScaleVar = typeof(DebugMenu).GetField("normalTimescale", BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
 
             GetItorahReference();
+
+            dropdownOptions = new List<string>();
+            foreach (var story in dMenu.StoryProgressDropdown.options) {
+                dropdownOptions.Add(story.text);
+            }
         }
 
         private void GetItorahReference() {
@@ -111,26 +117,34 @@ namespace ItorahDebug {
             }
         }
 
+        private bool showDropdown = false;
+        private int selectedDropdownIndex = 0;
+        private List<string> dropdownOptions;
+
+        private Vector2 dropdownScrollPosition = Vector2.zero; // Scroll position for the dropdown
+        private int maxDropdownHeight = 200; // Maximum height of the dropdown
+
+        private int maxWidth = 400; // Maximum width
         private void DrawCustomDebugMenu() {
-            int xPosition = Screen.width - 210;
+            int xPosition = Screen.width - maxWidth - 10;
             int currentY = 10;
             int yIncrement = 22;
             GUI.depth = int.MaxValue;
             GUI.Label(new Rect(xPosition, currentY, 200, 20), "Custom Debug Menu");
             currentY += yIncrement;
-            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Store position (F1)")) {
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Store position (F1)")) {
                 storedPos = itorah.transform.position;
             }
             currentY += yIncrement;
-            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Teleport to stored position (F2)")) {
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Teleport to stored position (F2)")) {
                 itorah.transform.position = storedPos;
             }
             currentY += yIncrement;
-            if (GUI.Button(new Rect(xPosition, currentY, 200, 20), "Restore health")) {
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Restore health")) {
                 itorah.GetComponent<LifePoints>().CurrentPoints = itorah.GetComponent<LifePoints>().Maximum;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, 200, 20), showHitbox, "Hitboxes")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth, 20), showHitbox, "Hitboxes")) {
                 showHitbox = true;
                 if (hitBoxRenderer == null) {
                     hitBoxRenderer = new GameObject("HitboxRenderer");
@@ -144,7 +158,7 @@ namespace ItorahDebug {
                 }
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, 200, 20), showHitboxTerrain, "Terrain Hitboxes")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth, 20), showHitboxTerrain, "Terrain Hitboxes")) {
                 showHitboxTerrain = true;
                 if (hitBoxTerrainRenderer == null) {
                     hitBoxTerrainRenderer = new GameObject("HitboxRendererTerrain");
@@ -160,7 +174,7 @@ namespace ItorahDebug {
             currentY += yIncrement;
 
             // Toggle DebugInfo
-            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), showDebugInfo, "Debug Info")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth, 20), showDebugInfo, "Debug Info")) {
                 showDebugInfo = true;
             } else {
                 showDebugInfo = false;
@@ -168,49 +182,79 @@ namespace ItorahDebug {
             currentY += yIncrement;
             
             // Skill Toggles
-            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[0].learned, "WallJump")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[0].learned, "WallJump")) {
                 playerSkillSet.skills[0].learned = true;
             } else {
                 playerSkillSet.skills[0].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[1].learned, "Stomp")) {
+            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[1].learned, "Stomp")) {
                 playerSkillSet.skills[1].learned = true;
             } else {
                 playerSkillSet.skills[1].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[2].learned, "DoubleJump")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[2].learned, "DoubleJump")) {
                 playerSkillSet.skills[2].learned = true;
             } else {
                 playerSkillSet.skills[2].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[3].learned, "UpperCut")) {
+            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[3].learned, "UpperCut")) {
                 playerSkillSet.skills[3].learned = true;
             } else {
                 playerSkillSet.skills[3].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[4].learned, "Dash")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[4].learned, "Dash")) {
                 playerSkillSet.skills[4].learned = true;
             } else {
                 playerSkillSet.skills[4].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[5].learned, "Heal")) {
+            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[5].learned, "Heal")) {
                 playerSkillSet.skills[5].learned = true;
             } else {
                 playerSkillSet.skills[5].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, 90, 20), playerSkillSet.skills[6].learned, "Throw")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[6].learned, "Throw")) {
                 playerSkillSet.skills[6].learned = true;
             } else {
                 playerSkillSet.skills[6].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+100, currentY, 90, 20), playerSkillSet.skills[7].learned, "ChargeAttack")) {
+            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[7].learned, "ChargeAttack")) {
                 playerSkillSet.skills[7].learned = true;
             } else {
                 playerSkillSet.skills[7].learned = false;
             }
+            currentY += yIncrement;
+
+            // Story Progression
+            GUI.Label(new Rect(xPosition, currentY, maxWidth, 20), "Story Progression:");
+            currentY += yIncrement;
+
+            selectedDropdownIndex = dMenu.StoryProgressDropdown.value;
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), dropdownOptions[selectedDropdownIndex])) {
+                showDropdown = !showDropdown;
+            }
+            if (showDropdown) {
+                
+                int totalDropdownHeight = dropdownOptions.Count * 20;
+                Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
+                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
+
+                dropdownScrollPosition = GUI.BeginScrollView(scrollViewRect, dropdownScrollPosition, contentRect);
+
+                for (int i = 0; i < dropdownOptions.Count; i++) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptions[i])) {
+                        selectedDropdownIndex = i;
+                        showDropdown = false;
+                        dMenu.StoryProgressDropdown.value = i;
+                        dMenu.SetSelectedStoryProgress();   
+                    }
+                }
+
+                GUI.EndScrollView();
+            }
+            currentY += yIncrement + (showDropdown ? Mathf.Min(maxDropdownHeight, dropdownOptions.Count * 20) : 0);
         }
     }
 }

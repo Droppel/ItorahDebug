@@ -30,6 +30,9 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\Programme\Depotdownloader\depots\1132911\8558143\Itorah_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\Programme\Depotdownloader\depots\1132911\8558143\Itorah_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy /Y &quot;$(TargetDir)ItorahDebug.dll&quot; &quot;D:\Programme\Depotdownloader\depots\1132911\8558143\BepInEx\scripts\ItorahDebug.dll&quot;" />
