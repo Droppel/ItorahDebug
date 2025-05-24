@@ -6,6 +6,10 @@ using GrimbartTales.Platformer2D.CharacterController;
 using ItorahDebug.Hitbox;
 using GrimbartTales.Platformer2D.DamageSystem;
 using System.Collections.Generic;
+using GrimbartTales.Platformer2D;
+using System.Runtime.CompilerServices;
+using GrimbartTales.Base.SaveSystem;
+using System.IO;
 
 namespace ItorahDebug {
 
@@ -53,6 +57,17 @@ namespace ItorahDebug {
             dropdownOptionsCheckpoint = new List<string>();
             foreach (var checkpoint in dMenu.BonfireDropdown.options) {
                 dropdownOptionsCheckpoint.Add(checkpoint.text);
+            }
+            dropdownOptionsSaves = new List<string>();
+            string saveLocation = Path.Combine(Application.persistentDataPath, "Itorah", "gamestates", "customSaves");
+            if (Directory.Exists(saveLocation)) {
+                string[] saveFiles = Directory.GetFiles(saveLocation, "*.sav");
+                foreach (string saveFile in saveFiles) {
+                    string fileName = Path.GetFileNameWithoutExtension(saveFile);
+                    dropdownOptionsSaves.Add(fileName);
+                }
+            } else {
+                Directory.CreateDirectory(saveLocation);
             }
         }
 
@@ -109,6 +124,20 @@ namespace ItorahDebug {
             if (showHealthbars) {
                 DrawHealthBars();
             }
+        }
+
+        private void SaveGame(string saveName) {
+            if (itorah == null) {
+                GetItorahReference();
+            }
+
+            SaveSystem saveSystem = itorah.GetComponent<ItorahSessionData>().SaveSystem;
+            string saveLocation = Path.Combine(Application.persistentDataPath, "Itorah", "gamestates", "customSaves");
+            if (!Directory.Exists(saveLocation)) {
+                Directory.CreateDirectory(saveLocation);
+            }
+            saveSystem.SaveCurrentSession("customSaves/"+saveName);
+            Logger.LogInfo($"Saved game as {saveName}");
         }
 
         private void DrawHealthBars() {
@@ -182,8 +211,15 @@ namespace ItorahDebug {
         private List<string> dropdownOptionsCheckpoint;
         private Vector2 dropdownScrollPositionCheckpoint = Vector2.zero; // Scroll position for the dropdown
 
+        private bool showDropdownSaves = false;
+        private int selectedDropdownIndexSaves = 0;
+        private List<string> dropdownOptionsSaves;
+        private Vector2 dropdownScrollPositionSaves = Vector2.zero; // Scroll position for the dropdown
+
         private int maxDropdownHeight = 200; // Maximum height of the dropdown
         private int maxWidth = 400; // Maximum width
+
+        public string saveName = "";
 
         private void DrawCustomDebugMenu() {
             int xPosition = Screen.width - maxWidth - 10;
@@ -348,7 +384,41 @@ namespace ItorahDebug {
 
                 GUI.EndScrollView();
             }
+            currentY += yIncrement + (showDropdownCheckpoint ? Mathf.Min(maxDropdownHeight, dropdownOptionsCheckpoint.Count * 20) : 0);
+            // Save Game
+            saveName = GUI.TextField(new Rect(xPosition, currentY, maxWidth, 20), saveName, 30);
+            currentY += yIncrement;
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Save Game")) {
+                SaveGame(saveName);
+            }
+            currentY += yIncrement;
+            // Checkpoint
+            GUI.Label(new Rect(xPosition, currentY, maxWidth, 20), "Custom Saves:");
+            currentY += yIncrement;
+            selectedDropdownIndexSaves = dMenu.BonfireDropdown.value;
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), dropdownOptionsSaves[selectedDropdownIndexSaves])) {
+                showDropdownSaves = !showDropdownSaves;
+            }
+            if (showDropdownSaves) {
+                int totalDropdownHeight = dropdownOptionsSaves.Count * 20;
+                Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
+                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
 
+                dropdownScrollPositionSaves = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionSaves, contentRect);
+
+                for (int i = 0; i < dropdownOptionsSaves.Count; i++) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsSaves[i])) {
+                        selectedDropdownIndexSaves = i;
+                        showDropdownSaves = false;
+                        SaveSystem saveSystem = itorah.GetComponent<ItorahSessionData>().SaveSystem;
+                        string saveName = "customSaves/" + dropdownOptionsSaves[i];
+                        saveSystem.LoadFromSaveGame(saveName);
+                        Logger.LogInfo($"Loaded save game: {saveName}");
+                    }
+                }
+
+                GUI.EndScrollView();
+            }
         
         }
     }
