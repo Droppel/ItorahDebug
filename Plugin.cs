@@ -129,6 +129,10 @@ namespace ItorahDebug {
 
             LifePoints[] lifePoints = GameObject.FindObjectsOfType<LifePoints>();
             for (int i = 0; i < lifePoints.Length; i++) {
+                if (!lifePoints[i].isActiveAndEnabled) {
+                    return;
+                }
+
                 Transform transf = lifePoints[i].transform;
 
                 // Calculate the position and size of the health bar

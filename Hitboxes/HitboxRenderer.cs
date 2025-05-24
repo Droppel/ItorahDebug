@@ -31,6 +31,10 @@ namespace ItorahDebug.Hitbox {
             if (collider2D == null) {
                 return;
             }
+            
+            if (!collider2D.isActiveAndEnabled) {
+                return;
+            }
 
             if (collider2D is BoxCollider2D || collider2D is PolygonCollider2D || collider2D is EdgeCollider2D || collider2D is CircleCollider2D) {
                 if (colliders.Contains(collider2D)) {
