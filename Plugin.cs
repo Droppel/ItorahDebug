@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
-using GrimbartTales;
 using System.Reflection;
 using GrimbartTales.Platformer2D.CharacterController;
 using ItorahDebug.Hitbox;
@@ -16,6 +15,7 @@ namespace ItorahDebug {
 
         bool customDebugMenuOpen = false;
         bool showDebugInfo = true;
+        bool showHealthbars = false;
         bool showHitbox = false;
         bool showHitboxTerrain = false;
 
@@ -105,6 +105,53 @@ namespace ItorahDebug {
             if (showDebugInfo) {
                 DrawDebugInfo();
             }
+
+            if (showHealthbars) {
+                DrawHealthBars();
+            }
+        }
+
+        private void DrawHealthBars() {
+            // Create a black background texture
+            Texture2D redTexture = new Texture2D(1, 1);
+            redTexture.SetPixel(0, 0, Color.red);
+            redTexture.Apply();
+            Texture2D greenTexture = new Texture2D(1, 1);
+            greenTexture.SetPixel(0, 0, Color.green);
+            greenTexture.Apply();
+
+            // Create a GUIStyle with the backgrounds
+            GUIStyle redBackgroundStyle = new GUIStyle();
+            redBackgroundStyle.normal.background = redTexture;
+            GUIStyle greenBackgroundStyle = new GUIStyle();
+            greenBackgroundStyle.normal.background = greenTexture;
+
+
+            LifePoints[] lifePoints = GameObject.FindObjectsOfType<LifePoints>();
+            for (int i = 0; i < lifePoints.Length; i++) {
+                Transform transf = lifePoints[i].transform;
+
+                // Calculate the position and size of the health bar
+                string healthText = $"{lifePoints[i].CurrentPoints}/{lifePoints[i].Maximum}";
+                Vector2 textSize = GUI.skin.label.CalcSize(new GUIContent(healthText));
+                Vector3 screenPos = Camera.main.WorldToScreenPoint(transf.position);
+                float xText = screenPos.x - textSize.x/2; // Center the health bar
+                float yText = Screen.height - screenPos.y;
+
+                float barSize = 100; // Width of the health bar
+                float xBar = screenPos.x - barSize / 2;
+                float yBar = Screen.height - screenPos.y;
+
+                float healthPercentage = (float)lifePoints[i].CurrentPoints / lifePoints[i].Maximum;
+                float healthBarWidth = barSize * healthPercentage;
+                GUI.Box(new Rect(xBar, yBar, healthBarWidth, textSize.y), GUIContent.none, greenBackgroundStyle);
+                // Draw the red background box
+                GUI.Box(new Rect(xBar+healthBarWidth, yBar, barSize - healthBarWidth, textSize.y), GUIContent.none, redBackgroundStyle);
+                
+                GUIStyle blackTextStyle = new GUIStyle(GUI.skin.label);
+                blackTextStyle.normal.textColor = Color.black;
+                GUI.Label(new Rect(xText, yText, textSize.x, textSize.y), healthText, blackTextStyle);
+            }
         }
 
         private void DrawDebugInfo() {
@@ -187,6 +234,14 @@ namespace ItorahDebug {
                 showDebugInfo = true;
             } else {
                 showDebugInfo = false;
+            }
+            currentY += yIncrement;
+
+            // Healthbars
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth, 20), showHealthbars, "Healthbars")) {
+                showHealthbars = true;
+            } else {
+                showHealthbars = false;
             }
             currentY += yIncrement;
             

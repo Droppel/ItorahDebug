@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 namespace ItorahDebug.Hitbox {
     public class HitboxRender : MonoBehaviour {
