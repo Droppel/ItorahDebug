@@ -390,6 +390,7 @@ namespace ItorahDebug {
             currentY += yIncrement;
             if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Save Game")) {
                 SaveGame(saveName);
+                dropdownOptionsSaves.Add(saveName);
             }
             currentY += yIncrement;
             // Checkpoint
