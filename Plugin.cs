@@ -7,9 +7,9 @@ using ItorahDebug.Hitbox;
 using GrimbartTales.Platformer2D.DamageSystem;
 using System.Collections.Generic;
 using GrimbartTales.Platformer2D;
-using System.Runtime.CompilerServices;
 using GrimbartTales.Base.SaveSystem;
 using System.IO;
+using GrimbartTales.Platformer2D.Level;
 
 namespace ItorahDebug {
 
@@ -136,6 +136,9 @@ namespace ItorahDebug {
             if (!Directory.Exists(saveLocation)) {
                 Directory.CreateDirectory(saveLocation);
             }
+
+            Checkpoint.lastActivatedCheckpoint.position = itorah.transform.position;
+            
             saveSystem.SaveCurrentSession("customSaves/"+saveName);
             Logger.LogInfo($"Saved game as {saveName}");
         }
