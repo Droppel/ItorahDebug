@@ -112,9 +112,14 @@ namespace ItorahDebug {
         }
 
         private void OnDestroy() {
+            harmony.UnpatchSelf();
+
             if (hitBoxRenderer != null) {
                 DestroyImmediate(hitBoxRenderer);
                 hitBoxRenderer = null;
+            }
+
+            if (hitBoxTerrainRenderer != null) {
                 DestroyImmediate(hitBoxTerrainRenderer);
                 hitBoxTerrainRenderer = null;
             }
@@ -449,6 +454,12 @@ namespace ItorahDebug {
         [HarmonyPatch("Awake", new Type[] { })]
         private static bool Prefix() {
             Plugin plugin = GameObject.Find("BepInEx_Manager").GetComponent<Plugin>();
+            if (plugin == null) {
+                ScriptEngine.ScriptEngine sEngine = GameObject.Find("BepInEx_Manager").GetComponent<ScriptEngine.ScriptEngine>();
+                var scriptManager = typeof(ScriptEngine.ScriptEngine).GetField("scriptManager", BindingFlags.NonPublic | BindingFlags.Instance);
+                GameObject scriptManagerObj = (GameObject)scriptManager.GetValue(sEngine);
+                plugin = scriptManagerObj.GetComponent<Plugin>();
+            }
             plugin.enabled = true;
             plugin.InitMod();
             Plugin.Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
