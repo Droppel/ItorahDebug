@@ -10,15 +10,19 @@ using GrimbartTales.Platformer2D;
 using GrimbartTales.Base.SaveSystem;
 using System.IO;
 using GrimbartTales.Platformer2D.Level;
+using HarmonyLib;
+using System;
 
 namespace ItorahDebug {
 
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin {
+        Harmony harmony;
         internal static new ManualLogSource Logger;
 
         bool customDebugMenuOpen = false;
         bool showDebugInfo = true;
+        float highestY;
         bool showHealthbars = false;
         bool showHitbox = false;
         bool showHitboxTerrain = false;
@@ -38,8 +42,12 @@ namespace ItorahDebug {
         private void Awake() {
             // Plugin startup logic
             Logger = base.Logger;
+            harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+        }
 
+        public void InitMod() {
             dMenu = Resources.FindObjectsOfTypeAll<DebugMenu>()[0];
             dMenu.safetyDisableForReleaseBuild = false;
 
@@ -79,7 +87,6 @@ namespace ItorahDebug {
         }
 
         private void Update() {
-
             if ((bool)dMenuOpenVar.GetValue(dMenu)) {
                 if (Input.GetKeyDown(KeyCode.Alpha3)) {
                     dNormalTimeScaleVar.SetValue(dMenu, 0.5f);
@@ -96,11 +103,12 @@ namespace ItorahDebug {
             }
 
             if (Input.GetKeyDown(KeyCode.Alpha8)) {
-
                 GetItorahReference();
                 this.customDebugMenuOpen = !this.customDebugMenuOpen;
                 Cursor.visible = this.customDebugMenuOpen;
             }
+
+            highestY = Mathf.Max(highestY, itorah.transform.position.y);
         }
 
         private void OnDestroy() {
@@ -138,8 +146,8 @@ namespace ItorahDebug {
             }
 
             Checkpoint.lastActivatedCheckpoint.position = itorah.transform.position;
-            
-            saveSystem.SaveCurrentSession("customSaves/"+saveName);
+
+            saveSystem.SaveCurrentSession("customSaves/" + saveName);
             Logger.LogInfo($"Saved game as {saveName}");
         }
 
@@ -171,7 +179,7 @@ namespace ItorahDebug {
                 string healthText = $"{lifePoints[i].CurrentPoints}/{lifePoints[i].Maximum}";
                 Vector2 textSize = GUI.skin.label.CalcSize(new GUIContent(healthText));
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(transf.position);
-                float xText = screenPos.x - textSize.x/2; // Center the health bar
+                float xText = screenPos.x - textSize.x / 2; // Center the health bar
                 float yText = Screen.height - screenPos.y;
 
                 float barSize = 100; // Width of the health bar
@@ -182,8 +190,8 @@ namespace ItorahDebug {
                 float healthBarWidth = barSize * healthPercentage;
                 GUI.Box(new Rect(xBar, yBar, healthBarWidth, textSize.y), GUIContent.none, greenBackgroundStyle);
                 // Draw the red background box
-                GUI.Box(new Rect(xBar+healthBarWidth, yBar, barSize - healthBarWidth, textSize.y), GUIContent.none, redBackgroundStyle);
-                
+                GUI.Box(new Rect(xBar + healthBarWidth, yBar, barSize - healthBarWidth, textSize.y), GUIContent.none, redBackgroundStyle);
+
                 GUIStyle blackTextStyle = new GUIStyle(GUI.skin.label);
                 blackTextStyle.normal.textColor = Color.black;
                 GUI.Label(new Rect(xText, yText, textSize.x, textSize.y), healthText, blackTextStyle);
@@ -200,6 +208,8 @@ namespace ItorahDebug {
                 GUI.Label(new Rect(10, currentY, 200, 20), $"Position: {itorah.transform.position}");
                 currentY += yIncrement;
                 GUI.Label(new Rect(10, currentY, 200, 20), $"Velocity: {itorah.GetComponent<Rigidbody2D>().velocity}");
+                currentY += yIncrement;
+                GUI.Label(new Rect(10, currentY, 200, 20), $"Highest Y: {highestY}");
                 currentY += yIncrement;
             }
         }
@@ -280,6 +290,11 @@ namespace ItorahDebug {
             }
             currentY += yIncrement;
 
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Reset Height Tracker")) {
+                highestY = itorah.transform.position.y;
+            }
+            currentY += yIncrement;
+
             // Healthbars
             if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth, 20), showHealthbars, "Healthbars")) {
                 showHealthbars = true;
@@ -287,47 +302,47 @@ namespace ItorahDebug {
                 showHealthbars = false;
             }
             currentY += yIncrement;
-            
+
             // Skill Toggles
-            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[0].learned, "WallJump")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth / 2, 20), playerSkillSet.skills[0].learned, "WallJump")) {
                 playerSkillSet.skills[0].learned = true;
             } else {
                 playerSkillSet.skills[0].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[1].learned, "Stomp")) {
+            if (GUI.Toggle(new Rect(xPosition + maxWidth / 2, currentY, maxWidth / 2, 20), playerSkillSet.skills[1].learned, "Stomp")) {
                 playerSkillSet.skills[1].learned = true;
             } else {
                 playerSkillSet.skills[1].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[2].learned, "DoubleJump")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth / 2, 20), playerSkillSet.skills[2].learned, "DoubleJump")) {
                 playerSkillSet.skills[2].learned = true;
             } else {
                 playerSkillSet.skills[2].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[3].learned, "UpperCut")) {
+            if (GUI.Toggle(new Rect(xPosition + maxWidth / 2, currentY, maxWidth / 2, 20), playerSkillSet.skills[3].learned, "UpperCut")) {
                 playerSkillSet.skills[3].learned = true;
             } else {
                 playerSkillSet.skills[3].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[4].learned, "Dash")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth / 2, 20), playerSkillSet.skills[4].learned, "Dash")) {
                 playerSkillSet.skills[4].learned = true;
             } else {
                 playerSkillSet.skills[4].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[5].learned, "Heal")) {
+            if (GUI.Toggle(new Rect(xPosition + maxWidth / 2, currentY, maxWidth / 2, 20), playerSkillSet.skills[5].learned, "Heal")) {
                 playerSkillSet.skills[5].learned = true;
             } else {
                 playerSkillSet.skills[5].learned = false;
             }
             currentY += yIncrement;
-            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth/2, 20), playerSkillSet.skills[6].learned, "Throw")) {
+            if (GUI.Toggle(new Rect(xPosition, currentY, maxWidth / 2, 20), playerSkillSet.skills[6].learned, "Throw")) {
                 playerSkillSet.skills[6].learned = true;
             } else {
                 playerSkillSet.skills[6].learned = false;
             }
-            if (GUI.Toggle(new Rect(xPosition+maxWidth/2, currentY, maxWidth/2, 20), playerSkillSet.skills[7].learned, "ChargeAttack")) {
+            if (GUI.Toggle(new Rect(xPosition + maxWidth / 2, currentY, maxWidth / 2, 20), playerSkillSet.skills[7].learned, "ChargeAttack")) {
                 playerSkillSet.skills[7].learned = true;
             } else {
                 playerSkillSet.skills[7].learned = false;
@@ -343,19 +358,19 @@ namespace ItorahDebug {
                 showDropdownStorProg = !showDropdownStorProg;
             }
             if (showDropdownStorProg) {
-                
+
                 int totalDropdownHeight = dropdownOptionsStorProg.Count * 20;
                 Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
-                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
+                Rect contentRect = new Rect(0, 0, maxWidth - 20, totalDropdownHeight);
 
                 dropdownScrollPositionStorProg = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionStorProg, contentRect);
 
                 for (int i = 0; i < dropdownOptionsStorProg.Count; i++) {
-                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsStorProg[i])) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth - 20, 20), dropdownOptionsStorProg[i])) {
                         selectedDropdownIndexStorProg = i;
                         showDropdownStorProg = false;
                         dMenu.StoryProgressDropdown.value = i;
-                        dMenu.SetSelectedStoryProgress();   
+                        dMenu.SetSelectedStoryProgress();
                     }
                 }
 
@@ -372,16 +387,16 @@ namespace ItorahDebug {
             if (showDropdownCheckpoint) {
                 int totalDropdownHeight = dropdownOptionsCheckpoint.Count * 20;
                 Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
-                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
+                Rect contentRect = new Rect(0, 0, maxWidth - 20, totalDropdownHeight);
 
                 dropdownScrollPositionCheckpoint = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionCheckpoint, contentRect);
 
                 for (int i = 0; i < dropdownOptionsCheckpoint.Count; i++) {
-                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsCheckpoint[i])) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth - 20, 20), dropdownOptionsCheckpoint[i])) {
                         selectedDropdownIndexCheckpoint = i;
                         showDropdownCheckpoint = false;
                         dMenu.BonfireDropdown.value = i;
-                        dMenu.LoadSelectedCheckpoint();   
+                        dMenu.LoadSelectedCheckpoint();
                     }
                 }
 
@@ -406,12 +421,12 @@ namespace ItorahDebug {
             if (showDropdownSaves) {
                 int totalDropdownHeight = dropdownOptionsSaves.Count * 20;
                 Rect scrollViewRect = new Rect(xPosition, currentY + 20, maxWidth, Mathf.Min(maxDropdownHeight, totalDropdownHeight));
-                Rect contentRect = new Rect(0, 0, maxWidth-20, totalDropdownHeight);
+                Rect contentRect = new Rect(0, 0, maxWidth - 20, totalDropdownHeight);
 
                 dropdownScrollPositionSaves = GUI.BeginScrollView(scrollViewRect, dropdownScrollPositionSaves, contentRect);
 
                 for (int i = 0; i < dropdownOptionsSaves.Count; i++) {
-                    if (GUI.Button(new Rect(0, i * 20, maxWidth-20, 20), dropdownOptionsSaves[i])) {
+                    if (GUI.Button(new Rect(0, i * 20, maxWidth - 20, 20), dropdownOptionsSaves[i])) {
                         selectedDropdownIndexSaves = i;
                         showDropdownSaves = false;
                         SaveSystem saveSystem = itorah.GetComponent<ItorahSessionData>().SaveSystem;
@@ -423,7 +438,21 @@ namespace ItorahDebug {
 
                 GUI.EndScrollView();
             }
-        
+
+        }
+    }
+
+
+
+    [HarmonyPatch(typeof(ItorahSessionData))]
+    public class ItorahSessionDataPatch {
+        [HarmonyPatch("Awake", new Type[] { })]
+        private static bool Prefix() {
+            Plugin plugin = GameObject.Find("BepInEx_Manager").GetComponent<Plugin>();
+            plugin.enabled = true;
+            plugin.InitMod();
+            Plugin.Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+            return true;
         }
     }
 }
