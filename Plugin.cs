@@ -23,6 +23,7 @@ namespace ItorahDebug {
         bool customDebugMenuOpen = false;
         bool showDebugInfo = true;
         float highestY;
+        float highestYVel;
         bool showHealthbars = false;
         bool showHitbox = false;
         bool showHitboxTerrain = false;
@@ -38,6 +39,8 @@ namespace ItorahDebug {
 
         GameObject hitBoxRenderer = null;
         GameObject hitBoxTerrainRenderer = null;
+
+        string lastLoadedSave = "";
 
         private void Awake() {
             // Plugin startup logic
@@ -102,6 +105,14 @@ namespace ItorahDebug {
                 itorah.transform.position = storedPos;
             }
 
+            if (Input.GetKeyDown(KeyCode.F3)) {
+                if (!string.IsNullOrEmpty(lastLoadedSave)) {
+                    LoadGame(lastLoadedSave);
+                } else {
+                    Logger.LogWarning("No last loaded save found.");
+                }
+            }
+
             if (Input.GetKeyDown(KeyCode.Alpha8)) {
                 GetItorahReference();
                 this.customDebugMenuOpen = !this.customDebugMenuOpen;
@@ -109,6 +120,7 @@ namespace ItorahDebug {
             }
 
             highestY = Mathf.Max(highestY, itorah.transform.position.y);
+            highestYVel = Mathf.Max(highestYVel, itorah.GetComponent<Rigidbody2D>().velocity.y);
         }
 
         private void OnDestroy() {
@@ -150,10 +162,22 @@ namespace ItorahDebug {
                 Directory.CreateDirectory(saveLocation);
             }
 
+            Checkpoint[] checkpoints = GameObject.FindObjectsOfType<Checkpoint>();
+            if (checkpoints.Length == 0) {
+                Logger.LogWarning("No checkpoints found in the scene. Saving without checkpoints.");
+            } else {
+                Checkpoint.lastActivatedCheckpoint = checkpoints[0].Data;
+            }
             Checkpoint.lastActivatedCheckpoint.position = itorah.transform.position;
 
             saveSystem.SaveCurrentSession("customSaves/" + saveName);
             Logger.LogInfo($"Saved game as {saveName}");
+        }
+
+        private void LoadGame(string saveName) {
+            SaveSystem saveSystem = itorah.GetComponent<ItorahSessionData>().SaveSystem;
+            saveSystem.LoadFromSaveGame(saveName);
+            Logger.LogInfo($"Loaded save game: {saveName}");
         }
 
         private void DrawHealthBars() {
@@ -206,7 +230,7 @@ namespace ItorahDebug {
         private void DrawDebugInfo() {
             if (showDebugInfo) {
                 int xPosition = Screen.width - 210;
-                int currentY = Screen.height - 90;
+                int currentY = Screen.height - 150;
                 int yIncrement = 22;
                 GUI.Label(new Rect(10, currentY, 200, 20), "Debug Info");
                 currentY += yIncrement;
@@ -216,6 +240,7 @@ namespace ItorahDebug {
                 currentY += yIncrement;
                 GUI.Label(new Rect(10, currentY, 200, 20), $"Highest Y: {highestY}");
                 currentY += yIncrement;
+                GUI.Label(new Rect(10, currentY, 200, 20), $"Highest Y Velocity: {highestYVel}");
             }
         }
 
@@ -297,6 +322,7 @@ namespace ItorahDebug {
 
             if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Reset Height Tracker")) {
                 highestY = itorah.transform.position.y;
+                highestYVel = itorah.GetComponent<Rigidbody2D>().velocity.y;
             }
             currentY += yIncrement;
 
@@ -434,16 +460,23 @@ namespace ItorahDebug {
                     if (GUI.Button(new Rect(0, i * 20, maxWidth - 20, 20), dropdownOptionsSaves[i])) {
                         selectedDropdownIndexSaves = i;
                         showDropdownSaves = false;
-                        SaveSystem saveSystem = itorah.GetComponent<ItorahSessionData>().SaveSystem;
                         string saveName = "customSaves/" + dropdownOptionsSaves[i];
-                        saveSystem.LoadFromSaveGame(saveName);
-                        Logger.LogInfo($"Loaded save game: {saveName}");
+                        lastLoadedSave = saveName;
+                        LoadGame(saveName);
                     }
                 }
 
                 GUI.EndScrollView();
             }
+            currentY += yIncrement + (showDropdownSaves ? Mathf.Min(maxDropdownHeight, dropdownOptionsSaves.Count * 20) : 0);
 
+            if (GUI.Button(new Rect(xPosition, currentY, maxWidth, 20), "Load Last Save (F3)")) {
+                if (!string.IsNullOrEmpty(lastLoadedSave)) {
+                    LoadGame(lastLoadedSave);
+                } else {
+                    Logger.LogWarning("No last loaded save found.");
+                }
+            }
         }
     }
 
