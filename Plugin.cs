@@ -12,6 +12,7 @@ using System.IO;
 using GrimbartTales.Platformer2D.Level;
 using HarmonyLib;
 using System;
+using UnityEngine.EventSystems;
 
 namespace ItorahDebug {
 
@@ -111,6 +112,10 @@ namespace ItorahDebug {
                 } else {
                     Logger.LogWarning("No last loaded save found.");
                 }
+            }
+
+            if (Input.GetKeyDown(KeyCode.F4)) {
+                RespawnPoint.lastActivatedRespawnPoint = null;
             }
 
             if (Input.GetKeyDown(KeyCode.Alpha8)) {
@@ -497,6 +502,15 @@ namespace ItorahDebug {
             plugin.InitMod();
             Plugin.Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
             return true;
+        }
+    }
+    [HarmonyPatch(typeof(InputOptionsScreen))]
+    public class InputOptionsScreenPatch {
+        [HarmonyPatch("ShowPromptToConfirmChangesOrErrorPrompt", new Type[] { })]
+        private static bool Prefix(InputOptionsScreen __instance) {
+            EventSystem.current.SetSelectedGameObject(null);
+            __instance.ConfirmChangesPrompt.gameObject.SetActive(true);
+            return false;
         }
     }
 }
