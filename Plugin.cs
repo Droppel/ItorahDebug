@@ -33,7 +33,10 @@ namespace ItorahDebug {
         FieldInfo dMenuOpenVar;
         FieldInfo dNormalTimeScaleVar;
 
-        GameObject itorah;
+        GameObject noClipComponent;
+
+
+        public GameObject itorah;
         SkillSet playerSkillSet;
 
         Vector3 storedPos;
@@ -51,7 +54,8 @@ namespace ItorahDebug {
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
         }
 
-        public void InitMod() {
+        public void InitMod()
+        {
             dMenu = Resources.FindObjectsOfTypeAll<DebugMenu>()[0];
             dMenu.safetyDisableForReleaseBuild = false;
 
@@ -63,23 +67,38 @@ namespace ItorahDebug {
             GetItorahReference();
 
             dropdownOptionsStorProg = new List<string>();
-            foreach (var story in dMenu.StoryProgressDropdown.options) {
+            foreach (var story in dMenu.StoryProgressDropdown.options)
+            {
                 dropdownOptionsStorProg.Add(story.text);
             }
             dropdownOptionsCheckpoint = new List<string>();
-            foreach (var checkpoint in dMenu.BonfireDropdown.options) {
+            foreach (var checkpoint in dMenu.BonfireDropdown.options)
+            {
                 dropdownOptionsCheckpoint.Add(checkpoint.text);
             }
             dropdownOptionsSaves = new List<string>();
             string saveLocation = Path.Combine(Application.persistentDataPath, "Itorah", "gamestates", "customSaves");
-            if (Directory.Exists(saveLocation)) {
+            if (Directory.Exists(saveLocation))
+            {
                 string[] saveFiles = Directory.GetFiles(saveLocation, "*.sav");
-                foreach (string saveFile in saveFiles) {
+                foreach (string saveFile in saveFiles)
+                {
                     string fileName = Path.GetFileNameWithoutExtension(saveFile);
                     dropdownOptionsSaves.Add(fileName);
                 }
-            } else {
+            }
+            else
+            {
                 Directory.CreateDirectory(saveLocation);
+            }
+
+            // Init components
+            if (noClipComponent == null)
+            {
+                noClipComponent = new GameObject("NoClipController");
+                NoClipController noClipController = noClipComponent.AddComponent<NoClipController>();
+                noClipController.mainPlugin = this;
+                noClipComponent.transform.SetParent(this.transform);
             }
         }
 
