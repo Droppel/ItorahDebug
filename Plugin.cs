@@ -13,6 +13,12 @@ using GrimbartTales.Platformer2D.Level;
 using HarmonyLib;
 using System;
 using UnityEngine.EventSystems;
+using GrimbartTales.Base.StateMachine;
+using GrimbartTales.Platformer2D.StateMachine.Conditions;
+using XNode;
+using GrimbartTales.Base.StateMachine.Actions;
+using GrimbartTales.Platformer2D.Items;
+using System.Collections;
 
 namespace ItorahDebug {
 
@@ -46,12 +52,15 @@ namespace ItorahDebug {
 
         string lastLoadedSave = "";
 
-        private void Awake() {
+        private void Awake()
+        {
             // Plugin startup logic
             Logger = base.Logger;
             harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+            
+            InitMod();
         }
 
         public void InitMod()
@@ -143,19 +152,155 @@ namespace ItorahDebug {
                 Cursor.visible = this.customDebugMenuOpen;
             }
 
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                // Set current state to Wallsliding left
+                GetItorahReference();
+                itorah.GetComponent<StateMachineComponent>().StateMachine.RuntimeLayers[0].CurrentlyActivePath = "Grounded/WallSlide/SetDirectionLeft/";
+            }
+
+            if (Input.GetKeyDown(KeyCode.F10))
+            {
+                // Set current state to Wallsliding right
+                GetItorahReference();
+                itorah.GetComponent<ItemBag>().Items[1].Amount = 2;
+            }
+
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                // Get all StateMachines in the scene
+                StateMachineComponent[] stateMachineComponents = Resources.FindObjectsOfTypeAll<StateMachineComponent>();
+
+                List<string> alreadyProcessedGraphs = new List<string>();
+
+                foreach (StateMachineComponent stateMachineComponent in stateMachineComponents)
+                {
+                    if (stateMachineComponent.StateMachine.StateMachineLayers.Count > 0)
+                    {
+                        string stateMachineName = stateMachineComponent.StateMachine.name;
+                        foreach (StateMachineGraph stateMachineGraph in stateMachineComponent.StateMachine.StateMachineLayers)
+                        {
+                            string fullName = $"{stateMachineName}-{stateMachineGraph.name}-{stateMachineGraph.nodes.Count}";
+                            // Visualize the StateMachineGraph as a UML Diagram written to a file
+                            if (alreadyProcessedGraphs.Contains(fullName))
+                            {
+                                continue; // Skip if already processed
+                            }
+
+                            string filePath = Path.Combine(Application.persistentDataPath, $"StateMachine-{fullName}.txt");
+                            alreadyProcessedGraphs.Add(fullName);
+                            using (StreamWriter writer = new StreamWriter(filePath))
+                            {
+                                writer.WriteLine("@startuml:");
+                                writer.WriteLine("hide empty description");
+                                writer.WriteLine(VisualizeStateMachine(0, "", stateMachineGraph));
+                                writer.WriteLine("@enduml");
+                            }
+                        }
+                    }
+                }
+            }
+
             highestY = Mathf.Max(highestY, itorah.transform.position.y);
             highestYVel = Mathf.Max(highestYVel, itorah.GetComponent<Rigidbody2D>().velocity.y);
         }
 
-        private void OnDestroy() {
+        private string VisualizeStateMachine(int indentLevel, string parentName, StateMachineGraph stateMachineGraph)
+        {
+            string output = "";
+            foreach (StateMachineNode node in stateMachineGraph.nodes)
+            {
+                string nodeName = node.State.name == "Start" ? "[*]" : parentName + node.State.name.Replace(" ", "");
+                if (node is StateMachineSubmachineNode)
+                {
+                    StateMachineSubmachineNode submachineNode = (StateMachineSubmachineNode)node;
+                    string visualizedSubmachine = VisualizeStateMachine(indentLevel + 1, nodeName + "_", submachineNode.SubStateMachine);
+                    output += new string(' ', indentLevel * 2) + $"state {nodeName} {{\n";
+                    output += visualizedSubmachine + "\n";
+                    output += new string(' ', indentLevel * 2) + "}\n";
+                }
+
+                foreach (Transition transition in node.State.Transitions)
+                {
+                    string transitionNodeName = parentName + transition.To.name.Replace(" ", "");
+                    string line = new string(' ', indentLevel * 2) + $"{nodeName} --> {transitionNodeName}";
+                    // if (transition.Conditions.Count > 0)
+                    // {
+                    //     line += $" :";
+                    //     foreach (Condition condition in transition.Conditions)
+                    //     {
+                    //         string condString = ConditionToString(condition);
+                    //         line += $" {condString} &";
+                    //     }
+                    //     line = line.TrimEnd('&');
+                    // }
+                    output += line + "\n";
+                }
+            }
+            return output;
+        }
+
+        private string ConditionToString(Condition condition) {
+            string condString = "";
+            if (condition.Not) {
+                condString += "Not";
+            }
+            switch (condition) {
+                case ConditionGroup conditionGroup:
+                    switch (conditionGroup.Connection) {
+                        case ConditionGroup.ConditionConnection.All:
+                            condString += "All(";
+                            break;
+                        case ConditionGroup.ConditionConnection.Any:
+                            condString += "Any(";
+                            break;
+                        case ConditionGroup.ConditionConnection.None:
+                            condString += "None(";
+                            break;
+                    }
+                    foreach (Condition subCondition in conditionGroup.Conditions) {
+                        condString += $"{ConditionToString(subCondition)} & ";
+                    }
+                    condString = condString.TrimEnd('&', ' ') + ")";
+                    break;
+                case DieCondition dieCondition:
+                    condString += "Die";
+                    break;
+                case GroundedCondition groundedCondition:
+                    condString += "Grounded";
+                    break;
+                case ClimbLedgeCondition ledgeCondition:
+                    condString += $"{ledgeCondition.checkType}";
+                    break;
+                case TimeCondition timeCondition:
+                    var timeConditionConfigField = typeof(TimeCondition).GetField("config", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var timeConditionConfig = (TimeConditionConfig)timeConditionConfigField.GetValue(timeCondition);
+                    condString += $"Wait for {timeConditionConfig.timeInSeconds}s (Time)";
+                    break;
+                case TimerCondition timeCondition:
+                    var timerConditionConfigField = typeof(TimerCondition).GetField("config", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var timerConditionConfig = (TimerConfig)timerConditionConfigField.GetValue(timeCondition);
+                    condString += $"Wait for {timerConditionConfig.Timespan}s (Timer)";
+                    break;
+                default:
+                    condString += $"{condition.GetType().Name}";
+                    break;
+            }
+            return condString;
+        }
+
+        private void OnDestroy()
+        {
             harmony.UnpatchSelf();
 
-            if (hitBoxRenderer != null) {
+            if (hitBoxRenderer != null)
+            {
                 DestroyImmediate(hitBoxRenderer);
                 hitBoxRenderer = null;
             }
 
-            if (hitBoxTerrainRenderer != null) {
+            if (hitBoxTerrainRenderer != null)
+            {
                 DestroyImmediate(hitBoxTerrainRenderer);
                 hitBoxTerrainRenderer = null;
             }
@@ -265,6 +410,8 @@ namespace ItorahDebug {
                 GUI.Label(new Rect(10, currentY, 200, 20), $"Highest Y: {highestY}");
                 currentY += yIncrement;
                 GUI.Label(new Rect(10, currentY, 200, 20), $"Highest Y Velocity: {highestYVel}");
+                currentY += yIncrement;
+                GUI.Label(new Rect(10, currentY, 200, 20), $"Has respawn: {RespawnPoint.lastActivatedRespawnPoint != null}");
             }
         }
 
@@ -531,5 +678,87 @@ namespace ItorahDebug {
             __instance.ConfirmChangesPrompt.gameObject.SetActive(true);
             return false;
         }
+    }
+
+
+    [HarmonyPatch(typeof(JumpComponent))]
+    public class JumpComponentPatch {
+        [HarmonyPatch("ProcessJumps", new Type[] { })]
+        private static bool Prefix(JumpComponent __instance)
+        {
+            var jumpCommandsVar = typeof(JumpComponent).GetField("jumpCommands", BindingFlags.NonPublic | BindingFlags.Instance);
+            Queue<JumpType> jumpCommands = new Queue<JumpType>((Queue<JumpType>)jumpCommandsVar.GetValue(__instance));
+            if (jumpCommands.Count > 0)
+            {
+                Plugin.Logger.LogInfo($"Jumping with command: {jumpCommands.Peek().name}");
+                __instance.currentJumpType = jumpCommands.Dequeue();
+                if (__instance.currentJumpType.moveCharacterAwayFromGround)
+                {
+                    Vector2 vector = __instance.currentJumpType.moveCharacterAwayFromGroundOffset;
+                    if (__instance.currentJumpType.moveCharacterAwayFromGroundRelativeToGround)
+                    {
+                        vector = __instance.groundedComponent.calculateSlopeAngleRelativeTo.rotation * vector;
+                    }
+                    vector.x *= 1f + __instance.positionParent.CurrentParentSpeed.x * __instance.currentJumpType.moveCharacterAwayFromGroundParentVelocityFactor;
+                    vector.y *= 1f + __instance.positionParent.CurrentParentSpeed.y * __instance.currentJumpType.moveCharacterAwayFromGroundParentVelocityFactor;
+                    Vector2 velocity = __instance.r2d.velocity;
+                    __instance.r2d.position += vector;
+                    __instance.r2d.velocity = velocity;
+                    Plugin.Logger.LogInfo($"Moved character away from ground by {vector} with velocity {__instance.r2d.velocity}");
+                    __instance.positionParent.RigidbodyPositionChanged();
+                }
+                Vector2 vector2 = __instance.currentJumpType.relativeDirectionOffset;
+                if (!__instance.currentJumpType.ignoreFacingDirection && __instance.character.Direction == CharacterBase.FacingDirection.Left)
+                {
+                    vector2.x *= -1f;
+                }
+                if (__instance.currentJumpType.relativeToForwardDirection)
+                {
+                    vector2 = Vector2.Lerp(vector2, __instance.groundedComponent.calculateSlopeAngleRelativeTo.rotation * vector2, __instance.currentJumpType.relativenessWeight);
+                }
+                Vector2 vector3 = vector2.normalized * __instance.currentJumpType.velocity;
+                switch (__instance.currentJumpType.additiveAxis)
+                {
+                    case JumpType.AxisType.both:
+                        __instance.r2d.velocity += vector3;
+                        break;
+                    case JumpType.AxisType.xAxis:
+                        __instance.r2d.velocity = new Vector2(__instance.r2d.velocity.x + vector3.x, vector3.y);
+                        break;
+                    case JumpType.AxisType.yAxis:
+                        __instance.r2d.velocity = new Vector2(vector3.x, __instance.r2d.velocity.y + vector3.y);
+                        break;
+                    case JumpType.AxisType.none:
+                        __instance.r2d.velocity = vector3;
+                        break;
+                }
+                if (__instance.currentJumpType.flipCharacterDirectionAfterJump)
+                {
+                    if (__instance.character.Direction == CharacterBase.FacingDirection.Left)
+                    {
+                        __instance.character.Direction = CharacterBase.FacingDirection.Right;
+                    }
+                    else
+                    {
+                        __instance.character.Direction = CharacterBase.FacingDirection.Left;
+                    }
+                }
+                if (__instance.r2d.velocity.x >= 0.5f && __instance.character.Direction == CharacterBase.FacingDirection.Left)
+                {
+                    __instance.character.Direction = CharacterBase.FacingDirection.Right;
+                }
+                else if (__instance.r2d.velocity.x <= -0.5f && __instance.character.Direction == CharacterBase.FacingDirection.Right)
+                {
+                    __instance.character.Direction = CharacterBase.FacingDirection.Left;
+                }
+            }
+            return true;
+        }
+
+        //[HarmonyPatch("TriggerJump", new Type[] { typeof(JumpType) })]
+        //private static bool Prefix() {
+        //    Plugin.Logger.LogInfo("Jump!");
+        //    return true;
+        //}
     }
 }
